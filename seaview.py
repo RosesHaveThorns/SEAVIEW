@@ -71,21 +71,6 @@ class SeaView():
                 return
 
 
-    def load_calib(self, filename="camera"):
-        """Load calibration data file
-
-        Args:
-            filename (str, optional): Name of file to load, should not include the '.calib.npz'. Defaults to "camera".
-        """
-
-        self.calibration.load(filename)
-        print(f"Loaded Calibration File with error: {round(self.calibration.error, 3)}")
-
-    def start(self):
-        """Start SEAVIEW
-        """
-        pass
-
 if __name__ == "__main__":
     # setup command line argument parsing
     parser = argparse.ArgumentParser(description='Track position of a robot fish using a top down camera.')
@@ -108,11 +93,9 @@ if __name__ == "__main__":
     # use calibration file or calibrate camera
     if args.calibrate:
         sv.calibrate(not args.subpxoff)
-    else:
-        sv.load_calib(args.calibfile)
 
-    # start SEAVIEW
-    sv.start()
+    sv.calibration.load(args.calibfile)
+    print(f"Loaded Calibration File with error: {round(sv.calibration.error, 3)}")
 
     # quit
     cv2.destroyAllWindows()
