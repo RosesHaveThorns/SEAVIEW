@@ -5,6 +5,7 @@ Classes:
     Calibrate: A class containing helper functions to abstract opencv calibration calculation
 """
 
+from typing import List
 import cv2
 import numpy as np
 
@@ -15,6 +16,8 @@ class CalibrationData(object):
         User is expected to run this.load() if any required values are None.
 
         image_pts and object_pts are not required for image undistortion. All others must be given or loaded before use.
+        
+        All params are numpy arrays
         """
         self._mtx = mtx
         self._dist = dist
@@ -53,11 +56,12 @@ class CalibrationData(object):
     def error(self):
         """Mean error of points in calibration dataset. Returns None if image points or object points are not included in the calib data
         """
-        if self._imgpts == None or self._objpts == None:
+        
+        if self._imgpts.any() == None or self._objpts.any() == None:
             return None
 
         total_error = 0
-        for i in range(len(self._imgpts)):
+        for i in range(len(self._objpts)):
             imgp2, _ = cv2.projectPoints(self._objpts[i], self._rvecs[i], self._tvecs[i], self._mtx, self._dist)
             error = cv2.norm(self._imgpts[i], imgp2, cv2.NORM_L2)/len(imgp2)
             total_error += error
@@ -89,14 +93,14 @@ class CalibrationData(object):
             raise FileNotFoundError("Could not load calibration file, try recalculating and saving camera calibration data.")
 
     def __repr__(self):
-        return "Calibration[mtx:{0}, dist:{1}]".format(self._mtx, self._dist)
+        return "Calibration[mtx:{0}, dist:{1}]".format(self._mtx, self._dist, self.error())
 
     def __str__(self):
-        return "Calibration[mtx:{0}, dist:{1}]".format(self._mtx, self._dist)
+        return "Calibration[mtx:{0}, dist:{1}, error:{2}]".format(self._mtx, self._dist, self.error())
 
 class Calibrate():
 
-    def __init__(self, cb_size, cam_id=0):
+    def __init__(self, cb_size, cam_id=0, subpx_refinement = True):
         """Initialise Calibrate object
 
         Args:
@@ -113,6 +117,7 @@ class Calibrate():
 
         # criteria used by cv2.cornerSubPix to decide when to stop iterating
         self.subpxl_criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
+        self.subpxl_refine = subpx_refinement
 
         # convert from size in squares to number of inner corners
         self.CHECKERBOARD = (cb_size[0]-1, cb_size[1]-1)
@@ -157,7 +162,7 @@ class Calibrate():
         refined_mtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w,h), 1, (w,h))
 
         # save data to CalibrationData object
-        self.calib_data = CalibrationData(mtx, dist, rvecs, tvecs, refined_mtx, self.imagePoints, self.objectPoints)
+        self.calib_data = CalibrationData(mtx, dist, rvecs, tvecs, refined_mtx, np.array(self.imagePoints), np.array(self.objectPoints))
         return self.calib_data
 
 
@@ -177,8 +182,9 @@ class Calibrate():
         if not found:
             return False
 
-        # refine point locations to sub pixel accuracy
-        corners = cv2.cornerSubPix(image, corners, (11, 11), (-1, -1), self.subpxl_criteria)
+        if self.subpxl_refine:
+            # refine point locations to sub pixel accuracy
+            corners = cv2.cornerSubPix(image, corners, (11, 11), (-1, -1), self.subpxl_criteria)
 
         # append image and object points to corresponding arrays for later calibration calculation
         self.imagePoints.append(corners)

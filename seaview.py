@@ -1,6 +1,4 @@
-from glob import glob
 import sys, argparse
-from tkinter.tix import Tree
 import cv2
 import numpy as np
 
@@ -9,23 +7,27 @@ from Calibrate import *
 class SeaView():
     
     
-    def __init__(self):
+    def __init__(self, camera_id=1):
+        """Initialise SEAVIEW
+        """
         self.calibration = CalibrationData()
         self.CHECKERBOARD_SIZE = (9, 6)
+        self.cam_id = camera_id
 
-    def calibrate(self):
-        global CHECKERBOARD_SIZE
+    def calibrate(self, subpxl_refinement):
+        """Run calibration UI, using images from webcam which include checkerboards
+        """
 
         print("Expecting checkerboard with width={} and height={}".format(self.CHECKERBOARD_SIZE[0], self.CHECKERBOARD_SIZE[1]))
 
         # initialise calibrator
-        calib = Calibrate(self.CHECKERBOARD_SIZE)
+        calib = Calibrate(self.CHECKERBOARD_SIZE, cam_id=self.cam_id)
 
         # get images
         calibrating = True
         n_calibimgs = 0
+        error = None
         while calibrating:
-            error = None
             img = calib.readImage()
             img_ui = img.copy()
 
@@ -39,7 +41,6 @@ class SeaView():
 
             cv2.putText(img_ui, "-- Controls --", (25,70), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
             cv2.putText(img_ui, "S  add calibration image", (25,85), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
-            cv2.putText(img_ui, "E  update calibration error", (25,100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
             cv2.putText(img_ui, "Q  quit and save calibration data", (25,115), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
             
             
@@ -53,16 +54,10 @@ class SeaView():
                 found = calib.analyseImage(img)
                 if found:
                     n_calibimgs += 1
+                    error = round(calib.calculateCalibration(img.shape).error, 3)
+                    print(f"Current error: {error}")
                 else:
                     print("Failed to analyse image")
-
-            elif key == ord('e'):
-                if n_calibimgs > 0:
-                    # calibrate and calculate error. dont save calibration
-                    error = round(calib.calculateCalibration(img.shape).error, 3)
-                    print("Current error: {error}")
-                else:
-                    print("No calibration images saved")
 
             elif key == ord('q'):
 
@@ -77,9 +72,18 @@ class SeaView():
 
 
     def load_calib(self, filename="camera"):
+        """Load calibration data file
+
+        Args:
+            filename (str, optional): Name of file to load, should not include the '.calib.npz'. Defaults to "camera".
+        """
+
         self.calibration.load(filename)
+        print(f"Loaded Calibration File with error: {round(self.calibration.error, 3)}")
 
     def start(self):
+        """Start SEAVIEW
+        """
         pass
 
 if __name__ == "__main__":
@@ -88,18 +92,22 @@ if __name__ == "__main__":
 
     parser.add_argument("-c", "--calibrate", action="store_true",
                         help='Force camera calibration during startup')
+    parser.add_argument("--subpxoff", action="store_true",
+                        help='Do not use sub pixel refinement during calibration. Ignored if -c flag is not present')
     parser.add_argument("-C", "--calibfile", default="camera",
                         help='Name of the calibration data file to be used. Do not include ".calib.npz". Ignored if -c flag present')
+    parser.add_argument("--cam", default=0, type=int,
+                    help='Webcam Id')
 
     args = parser.parse_args()
 
 
     # create SEAVIEW instance
-    sv = SeaView()
+    sv = SeaView(args.cam)
 
     # use calibration file or calibrate camera
     if args.calibrate:
-        sv.calibrate()
+        sv.calibrate(not args.subpxoff)
     else:
         sv.load_calib(args.calibfile)
 
