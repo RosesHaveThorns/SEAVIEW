@@ -1,14 +1,100 @@
-"""Calibrate: class supporting camera calibration
+"""Calibrate: Contains calibration support classes
+
+Classes:
+    CalibrationData: A custom datatype for storing camera calibration data
+    Calibrate: A class containing helper functions to abstract opencv calibration calculation
 """
 
 import cv2
 import numpy as np
-from CalibrationData import CalibrationData
+
+class CalibrationData(object):
+    
+    def __init__(self, mtx=None, dist=None, rvecs=None, tvecs=None, refined_mtx=None, image_pts=None, object_pts=None):
+        """Creates CalibrationData object with initial values, all values default to None for use when creating empty object.
+        User is expected to run this.load() if any required values are None.
+
+        image_pts and object_pts are not required for image undistortion. All others must be given or loaded before use.
+        """
+        self._mtx = mtx
+        self._dist = dist
+        self._rvecs = rvecs
+        self._tvecs = tvecs
+        self._refMtx = refined_mtx
+        self._imgpts = image_pts
+        self._objpts = object_pts
+        
+    @property
+    def mtx(self):
+        """Camera calibration matrix"""
+        return self._mtx
+    
+    @property
+    def dst(self):
+        """__description__"""
+        return self._dist
+    
+    @property
+    def rvecs(self):
+        """__description__"""
+        return self._rvecs
+
+    @property
+    def tvecs(self):
+        """__description__"""
+        return self._tvecs
+
+    @property
+    def refmtx(self):
+        """Refined camera calibration matrix"""
+        return self._refMtx
+
+    @property
+    def error(self):
+        """Mean error of points in calibration dataset. Returns None if image points or object points are not included in the calib data
+        """
+        if self._imgpts == None or self._objpts == None:
+            return None
+
+        total_error = 0
+        for i in range(len(self._imgpts)):
+            imgp2, _ = cv2.projectPoints(self._objpts[i], self._rvecs[i], self._tvecs[i], self._mtx, self._dist)
+            error = cv2.norm(self._imgpts[i], imgp2, cv2.NORM_L2)/len(imgp2)
+            total_error += error
+
+        mean_error = total_error / len(self._objpts)
+
+        return mean_error
+    
+    def getImagePoints(self):
+        """Returns orginal image points array used to create calibration data"""
+        return self._imgpts
+
+    def save(self, filename="camera"):
+        np.savez_compressed(filename + ".calib", mtx=self._mtx, dist=self._dist, ref_mtx=self._refMtx, rvecs=self._rvecs, tvecs=self._tvecs, imgp=self._imgpts, objp=self._objpts)
+
+    def load(self, filename="camera"):
+        try:
+            loaded = np.load(filename + ".calib.npz")
+            self._mtx = loaded['mtx']
+            self._dist = loaded['dist']
+            self._refMtx = loaded['ref_mtx']
+            self._rvecs = loaded['rvecs']
+            self._tvecs = loaded['tvecs']
+            self._imgpts = loaded['imgp']
+            self._objpts = loaded['objp']
+        except FileNotFoundError:
+            raise FileNotFoundError("Could not find calibration file '{0}.calib.npz', are you sure it is in this directory?".format(filename))
+        except:
+            raise FileNotFoundError("Could not load calibration file, try recalculating and saving camera calibration data.")
+
+    def __repr__(self):
+        return "Calibration[mtx:{0}, dist:{1}]".format(self._mtx, self._dist)
+
+    def __str__(self):
+        return "Calibration[mtx:{0}, dist:{1}]".format(self._mtx, self._dist)
 
 class Calibrate():
-
-    # criteria used by cv2.cornerSubPix to decide when to stop iterating
-    subpxl_criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
     def __init__(self, cb_size, cam_id=0):
         """Initialise Calibrate object
@@ -24,6 +110,9 @@ class Calibrate():
         # initialise empty point location arrays
         self.objectPoints = [] # arrays of locations of points on checkerboard, repeated for each image
         self.imagePoints = [] # arrays of locations of points in each image
+
+        # criteria used by cv2.cornerSubPix to decide when to stop iterating
+        self.subpxl_criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
         # convert from size in squares to number of inner corners
         self.CHECKERBOARD = (cb_size[0]-1, cb_size[1]-1)
@@ -82,8 +171,6 @@ class Calibrate():
             bool: Indicates if a chessboard was found in the image
         """
 
-        global subpxl_criteria
-
         # find chessboard points in image
         found, corners = cv2.findChessboardCorners(image, self.CHECKERBOARD, cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_FAST_CHECK + cv2.CALIB_CB_NORMALIZE_IMAGE)
 
@@ -91,13 +178,27 @@ class Calibrate():
             return False
 
         # refine point locations to sub pixel accuracy
-        corners = cv2.cornerSubPix(image, corners, (11, 11), (-1, -1), subpxl_criteria)
+        corners = cv2.cornerSubPix(image, corners, (11, 11), (-1, -1), self.subpxl_criteria)
 
         # append image and object points to corresponding arrays for later calibration calculation
         self.imagePoints.append(corners)
         self.objectPoints.append(self.objp)
     
         return True
+
+    def isCheckerboard(self, image):
+        """Returns True if a checkerboard in in the image and False if not. Does not effect calibration.
+
+        Args:
+            image (Grayscale Image): An image in which a checkerboard may be present
+
+        Returns:
+            bool: Indicates if a chessboard was found in the image
+            array: list of corners found
+        """
+
+        found, corners = cv2.findChessboardCorners(image, self.CHECKERBOARD, cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_FAST_CHECK + cv2.CALIB_CB_NORMALIZE_IMAGE)
+        return found, corners
 
     def readImage(self):
         """Reads and preprocesses an image from the webcam
@@ -106,7 +207,27 @@ class Calibrate():
             Grayscale Image: opencv grayscale preprocessed image from webcam
         """
         ret, newimg = self.cam.read()
+
+        if not ret:
+            print("Failed to read camera")
+            image = cv2.imread("error.jpg")
+
         image = cv2.cvtColor(newimg, cv2.COLOR_BGR2GRAY)
 
         return image
 
+    def drawCheckerboardMarkers(self, image, found_checkerboard, corners=None):
+        """Draw markers showing where checkerboard corners have been recognised on given image. Has no effect on calibration. Use after analyseImage has been called.
+
+        Args:
+            image (Grayscale Image): The image to draw markers on
+            found_checkerboard (bool): Indicates if a checkerboard is in the image, intended to be passed from isCheckerboard or analyseImage
+            corners (array, Optional): Pass the array of checkerboard corners found if using with isCheckerboard. Do not include if using with analyseImage
+
+        Returns:
+            BGR Image: Image with markers drawn on
+        """
+
+        if corners is None:
+            corners = self.imagePoints[-1]
+        return cv2.drawChessboardCorners(cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), self.CHECKERBOARD, corners, found_checkerboard)
