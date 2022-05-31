@@ -25,6 +25,7 @@ class SeaView():
         calibrating = True
         n_calibimgs = 0
         while calibrating:
+            error = None
             img = calib.readImage()
             img_ui = img.copy()
 
@@ -33,8 +34,15 @@ class SeaView():
                 img_ui = calib.drawCheckerboardMarkers(img_ui, True, corners)
 
             # show image
-            cv2.putText(img_ui, f"Images: {n_calibimgs}", (25,25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
-            cv2.putText(img_ui, f"Current Error: {self.calibration.error}", (25,55), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2, cv2.LINE_AA)
+            cv2.putText(img_ui, f"Images: {n_calibimgs}", (25,25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1, cv2.LINE_AA)
+            cv2.putText(img_ui, f"Calibration Error: {error}", (25,55), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 1, cv2.LINE_AA)
+
+            cv2.putText(img_ui, "-- Controls --", (25,70), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
+            cv2.putText(img_ui, "S  add calibration image", (25,85), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
+            cv2.putText(img_ui, "E  update calibration error", (25,100), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
+            cv2.putText(img_ui, "Q  quit and save calibration data", (25,115), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1, cv2.LINE_AA)
+            
+            
             cv2.imshow("CALIBRATION", img_ui)
 
             # get key input/wait 1 millis
@@ -51,8 +59,8 @@ class SeaView():
             elif key == ord('e'):
                 if n_calibimgs > 0:
                     # calibrate and calculate error. dont save calibration
-                    tmp_calib = calib.calculateCalibration(img.shape)
-                    print(f"Current error: {round(tmp_calib.error, 2)}")
+                    error = round(calib.calculateCalibration(img.shape).error, 3)
+                    print("Current error: {error}")
                 else:
                     print("No calibration images saved")
 
@@ -62,9 +70,9 @@ class SeaView():
                     # calibrate and finish
                     self.calibration = calib.calculateCalibration(img.shape)
                     self.calibration.save()
-                    print(f"Calibration Successful, final error: {round(self.calibration.error, 2)}")
+                    print(f"\nCalibration Successful, final error: {round(self.calibration.error, 3)}\n")
                 else:
-                    print("No calibration images saved, quitting without calibration")
+                    print("\nNo calibration images saved, quitting without calibration\n")
                 return
 
 
@@ -73,9 +81,6 @@ class SeaView():
 
     def start(self):
         pass
-
-
-HELPSTRING = "seaview.py [-c] [-h]"
 
 if __name__ == "__main__":
     # setup command line argument parsing
@@ -100,3 +105,6 @@ if __name__ == "__main__":
 
     # start SEAVIEW
     sv.start()
+
+    # quit
+    cv2.destroyAllWindows()
