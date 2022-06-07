@@ -14,6 +14,13 @@ class SeaView():
         self.CHECKERBOARD_SIZE = (9, 6)
         self.cam_id = camera_id
 
+    def track(self):
+        if self.calibration.mtx == None:
+            print("No calibration data available, stopping...")
+            cv2.destroyAllWindows()
+            quit()
+        
+
     def calibrate(self, subpxl_refinement):
         """Run calibration UI, using images from webcam which include checkerboards
         """
@@ -75,6 +82,12 @@ if __name__ == "__main__":
     # setup command line argument parsing
     parser = argparse.ArgumentParser(description='Track position of a robot fish using a top down camera.')
 
+    parser.add_argument("videofile", type=str,
+                        help='Address of a video including fish tracking markers. Supported formats: MP4')
+    parser.add_argument("n_markers", type=int,
+                        help='Number of markers to track. If below total markers in image, uses markers closest to the fish\'s head')
+    
+
     parser.add_argument("-c", "--calibrate", action="store_true",
                         help='Force camera calibration during startup')
     parser.add_argument("--subpxoff", action="store_true",
@@ -82,7 +95,7 @@ if __name__ == "__main__":
     parser.add_argument("-C", "--calibfile", default="camera",
                         help='Name of the calibration data file to be used. Do not include ".calib.npz". Ignored if -c flag present')
     parser.add_argument("--cam", default=0, type=int,
-                    help='Webcam Id')
+                        help='Webcam Id. Ignored if -c flag is not present')
 
     args = parser.parse_args()
 
@@ -93,9 +106,11 @@ if __name__ == "__main__":
     # use calibration file or calibrate camera
     if args.calibrate:
         sv.calibrate(not args.subpxoff)
-
-    sv.calibration.load(args.calibfile)
-    print(f"Loaded Calibration File with error: {round(sv.calibration.error, 3)}")
+    else:
+        sv.calibration.load(args.calibfile)
+        print(f"Loaded Calibration File with error: {round(sv.calibration.error, 3)}")
+        
+    sv.track()
 
     # quit
     cv2.destroyAllWindows()
