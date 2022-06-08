@@ -2,20 +2,21 @@ import sys, argparse
 import cv2
 import numpy as np
 
-import SEAVIEW.Calibrate
-import SEAVIEW.Tracker
+from this import *
 
 class SeaView():
     
     
     def __init__(self, camera_id=1):
-        """Initialise SEAVIEW
+        """Command line UI for SEAVIEW robotic fish tracking software
         """
         self.calibration = CalibrationData()
-        self.CHECKERBOARD_SIZE = (9, 6)
+        self.CHECKERBOARD_SIZE = (9, 6) #(width, height) in squares of calibration checkerboard, defaults to (9, 6)
         self.cam_id = camera_id
 
     def track(self):
+        """Track robotic fish position in video frames
+        """
         if self.calibration.mtx == None:
             print("No calibration data available, stopping...")
             cv2.destroyAllWindows()

@@ -1,8 +1,4 @@
-"""Calibrate: Contains calibration support classes
-
-Classes:
-    CalibrationData: A custom datatype for storing camera calibration data
-    Calibrate: A class containing helper functions to abstract opencv calibration calculation
+"""Contains calibration support classes
 """
 
 from typing import List
