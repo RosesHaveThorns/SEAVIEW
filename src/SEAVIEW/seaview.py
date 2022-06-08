@@ -1,26 +1,34 @@
+"""Command line UI for SEAVIEW robotic fish tracking software
+"""
+
 import sys, argparse
 import cv2
 import numpy as np
 
-from this import *
+from Calibrate import *
+from Tracker import *
 
 class SeaView():
     
-    
-    def __init__(self, camera_id=1):
-        """Command line UI for SEAVIEW robotic fish tracking software
+    def __init__(self, vid_name, n_markers, camera_id=1):
+        """Tracking and calibration interface
         """
         self.calibration = CalibrationData()
         self.CHECKERBOARD_SIZE = (9, 6) #(width, height) in squares of calibration checkerboard, defaults to (9, 6)
         self.cam_id = camera_id
 
+        self.vid_name = vid_name
+        self.n_markers = n_markers
+
     def track(self):
         """Track robotic fish position in video frames
         """
-        if self.calibration.mtx == None:
+        if self.calibration.mtx is None:
             print("No calibration data available, stopping...")
             cv2.destroyAllWindows()
             quit()
+
+        tracker = Tracker(self.vid_name, self.n_markers)
         
 
     def calibrate(self, subpxl_refinement):
@@ -86,7 +94,7 @@ if __name__ == "__main__":
 
     parser.add_argument("videofile", type=str,
                         help='Address of a video including fish tracking markers. Supported formats: MP4')
-    parser.add_argument("n_markers", type=int,
+    parser.add_argument("num_markers", type=int,
                         help='Number of markers to track. If below total markers in image, uses markers closest to the fish\'s head')
     
 
@@ -103,7 +111,7 @@ if __name__ == "__main__":
 
 
     # create SEAVIEW instance
-    sv = SeaView(args.cam)
+    sv = SeaView(args.videofile, args.num_markers, args.cam)
 
     # use calibration file or calibrate camera
     if args.calibrate:
