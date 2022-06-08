@@ -2,7 +2,8 @@ import sys, argparse
 import cv2
 import numpy as np
 
-from Calibrate import *
+import SEAVIEW.Calibrate
+import SEAVIEW.Tracker
 
 class SeaView():
     

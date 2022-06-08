@@ -75,9 +75,22 @@ class CalibrationData(object):
         return self._imgpts
 
     def save(self, filename="camera"):
+        """Saves current calibration data to a file with filetype '.calib.npz'
+
+        Args:
+            filename (str, optional): Filename of calibration data file, not including '.calib.npz'. Defaults to 'camera'.
+        """
         np.savez_compressed(filename + ".calib", mtx=self._mtx, dist=self._dist, ref_mtx=self._refMtx, rvecs=self._rvecs, tvecs=self._tvecs, imgp=self._imgpts, objp=self._objpts)
 
     def load(self, filename="camera"):
+        """Loads a calibration data file with filetype '.calib.npz'
+
+        Args:
+            filename (str, optional): Filename of calibration data file, not including '.calib.npz'. Defaults to 'camera'.
+
+        Raises:
+            FileNotFoundError: Raised if a calibration file couldn't be found or loaded
+        """
         try:
             loaded = np.load(filename + ".calib.npz")
             self._mtx = loaded['mtx']
@@ -106,6 +119,7 @@ class Calibrate():
         Args:
             cb_size (tuple): Size, in squares, of calibration checkerboard in (int, int) format.
             cam_id (int, optional): Webcam id to be used as image source. Defaults to 0.
+            subpx_refinement (bool, optional): Use sub pixel refinement during calibration. Defaults to True.
         """
 
         # initialise calibration data 

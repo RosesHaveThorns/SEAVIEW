@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>SEAVIEW.Calibrate API documentation</title>
+<meta name="description" content="Calibrate: Contains calibration support classes …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>SEAVIEW.Calibrate</code></h1>
+</header>
+<section id="section-intro">
+<p>Calibrate: Contains calibration support classes</p>
+<h2 id="classes">Classes</h2>
+<p>CalibrationData: A custom datatype for storing camera calibration data
+Calibrate: A class containing helper functions to abstract opencv calibration calculation</p>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="SEAVIEW.Calibrate.Calibrate"><code class="flex name class">
+<span>class <span class="ident">Calibrate</span></span>
+<span>(</span><span>cb_size, cam_id=0, subpx_refinement=True)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Initialise Calibrate object</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>cb_size</code></strong> :&ensp;<code>tuple</code></dt>
+<dd>Size, in squares, of calibration checkerboard in (int, int) format.</dd>
+<dt><strong><code>cam_id</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>Webcam id to be used as image source. Defaults to 0.</dd>
+<dt><strong><code>subpx_refinement</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Use sub pixel refinement during calibration. Defaults to True.</dd>
+</dl></div>
+<h3>Methods</h3>
+<dl>
+<dt id="SEAVIEW.Calibrate.Calibrate.analyseImage"><code class="name flex">
+<span>def <span class="ident">analyseImage</span></span>(<span>self, image)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Searches for a checkerboard in the given image and saves corners found if successful. Repeat with multiple images for best accuracy</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>image</code></strong> :&ensp;<code>Grayscale Image</code></dt>
+<dd>A grayscale image in which a chessboard may be present</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>bool</code></dt>
+<dd>Indicates if a chessboard was found in the image</dd>
+</dl></div>
+</dd>
+<dt id="SEAVIEW.Calibrate.Calibrate.calculateCalibration"><code class="name flex">
+<span>def <span class="ident">calculateCalibration</span></span>(<span>self, image_shape)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Calculates camera calibration data from current saved checkerboard points</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>image_shape</code></strong> :&ensp;<code>tuple</code></dt>
+<dd>Height, Width of images used for calibration (must all be same)]</dd>
+</dl>
+<h2 id="return">Return</h2>
+<p>CalibrationData: CalibrationData object containing all required calibration parameters and the image point locations used</p></div>
+</dd>
+<dt id="SEAVIEW.Calibrate.Calibrate.drawCheckerboardMarkers"><code class="name flex">
+<span>def <span class="ident">drawCheckerboardMarkers</span></span>(<span>self, image, found_checkerboard, corners=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Draw markers showing where checkerboard corners have been recognised on given image. Has no effect on calibration. Use after analyseImage has been called.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>image</code></strong> :&ensp;<code>Grayscale Image</code></dt>
+<dd>The image to draw markers on</dd>
+<dt><strong><code>found_checkerboard</code></strong> :&ensp;<code>bool</code></dt>
+<dd>Indicates if a checkerboard is in the image, intended to be passed from isCheckerboard or analyseImage</dd>
+<dt><strong><code>corners</code></strong> :&ensp;<code>array, Optional</code></dt>
+<dd>Pass the array of checkerboard corners found if using with isCheckerboard. Do not include if using with analyseImage</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>BGR Image</code></dt>
+<dd>Image with markers drawn on</dd>
+</dl></div>
+</dd>
+<dt id="SEAVIEW.Calibrate.Calibrate.getCalibrationData"><code class="name flex">
+<span>def <span class="ident">getCalibrationData</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns current calibration data object if calibration calculation has been completed</p>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>ValueError</code></dt>
+<dd>raised if calibration has not been completed yet</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code><a title="SEAVIEW.Calibrate.CalibrationData" href="#SEAVIEW.Calibrate.CalibrationData">CalibrationData</a></code></dt>
+<dd>Current calibration data object</dd>
+</dl></div>
+</dd>
+<dt id="SEAVIEW.Calibrate.Calibrate.isCheckerboard"><code class="name flex">
+<span>def <span class="ident">isCheckerboard</span></span>(<span>self, image)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns True if a checkerboard in in the image and False if not. Does not effect calibration.</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>image</code></strong> :&ensp;<code>Grayscale Image</code></dt>
+<dd>An image in which a checkerboard may be present</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>bool</code></dt>
+<dd>Indicates if a chessboard was found in the image</dd>
+<dt><code>array</code></dt>
+<dd>list of corners found</dd>
+</dl></div>
+</dd>
+<dt id="SEAVIEW.Calibrate.Calibrate.readImage"><code class="name flex">
+<span>def <span class="ident">readImage</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Reads and preprocesses an image from the webcam</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Grayscale Image</code></dt>
+<dd>opencv grayscale preprocessed image from webcam</dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+<dt id="SEAVIEW.Calibrate.CalibrationData"><code class="flex name class">
+<span>class <span class="ident">CalibrationData</span></span>
+<span>(</span><span>mtx=None, dist=None, rvecs=None, tvecs=None, refined_mtx=None, image_pts=None, object_pts=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Creates CalibrationData object with initial values, all values default to None for use when creating empty object.
+User is expected to run this.load() if any required values are None.</p>
+<p>image_pts and object_pts are not required for image undistortion. All others must be given or loaded before use.</p>
+<p>All params are numpy arrays</p></div>
+<h3>Instance variables</h3>
+<dl>
+<dt id="SEAVIEW.Calibrate.CalibrationData.dst"><code class="name">var <span class="ident">dst</span></code></dt>
+<dd>
+<div class="desc"><p><strong>description</strong></p></div>
+</dd>
+<dt id="SEAVIEW.Calibrate.CalibrationData.error"><code class="name">var <span class="ident">error</span></code></dt>
+<dd>
+<div class="desc"><p>Mean error of points in calibration dataset. Returns None if image points or object points are not included in the calib data</p></div>
+</dd>
+<dt id="SEAVIEW.Calibrate.CalibrationData.mtx"><code class="name">var <span class="ident">mtx</span></code></dt>
+<dd>
+<div class="desc"><p>Camera calibration matrix</p></div>
+</dd>
+<dt id="SEAVIEW.Calibrate.CalibrationData.refmtx"><code class="name">var <span class="ident">refmtx</span></code></dt>
+<dd>
+<div class="desc"><p>Refined camera calibration matrix</p></div>
+</dd>
+<dt id="SEAVIEW.Calibrate.CalibrationData.rvecs"><code class="name">var <span class="ident">rvecs</span></code></dt>
+<dd>
+<div class="desc"><p><strong>description</strong></p></div>
+</dd>
+<dt id="SEAVIEW.Calibrate.CalibrationData.tvecs"><code class="name">var <span class="ident">tvecs</span></code></dt>
+<dd>
+<div class="desc"><p><strong>description</strong></p></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="SEAVIEW.Calibrate.CalibrationData.getImagePoints"><code class="name flex">
+<span>def <span class="ident">getImagePoints</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns orginal image points array used to create calibration data</p></div>
+</dd>
+<dt id="SEAVIEW.Calibrate.CalibrationData.load"><code class="name flex">
+<span>def <span class="ident">load</span></span>(<span>self, filename='camera')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Loads a calibration data file with filetype '.calib.npz'</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>filename</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>Filename of calibration data file, not including '.calib.npz'. Defaults to 'camera'.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>FileNotFoundError</code></dt>
+<dd>Raised if a calibration file couldn't be found or loaded</dd>
+</dl></div>
+</dd>
+<dt id="SEAVIEW.Calibrate.CalibrationData.save"><code class="name flex">
+<span>def <span class="ident">save</span></span>(<span>self, filename='camera')</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Saves current calibration data to a file with filetype '.calib.npz'</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>filename</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>Filename of calibration data file, not including '.calib.npz'. Defaults to 'camera'.</dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="SEAVIEW" href="index.html">SEAVIEW</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="SEAVIEW.Calibrate.Calibrate" href="#SEAVIEW.Calibrate.Calibrate">Calibrate</a></code></h4>
+<ul class="">
+<li><code><a title="SEAVIEW.Calibrate.Calibrate.analyseImage" href="#SEAVIEW.Calibrate.Calibrate.analyseImage">analyseImage</a></code></li>
+<li><code><a title="SEAVIEW.Calibrate.Calibrate.calculateCalibration" href="#SEAVIEW.Calibrate.Calibrate.calculateCalibration">calculateCalibration</a></code></li>
+<li><code><a title="SEAVIEW.Calibrate.Calibrate.drawCheckerboardMarkers" href="#SEAVIEW.Calibrate.Calibrate.drawCheckerboardMarkers">drawCheckerboardMarkers</a></code></li>
+<li><code><a title="SEAVIEW.Calibrate.Calibrate.getCalibrationData" href="#SEAVIEW.Calibrate.Calibrate.getCalibrationData">getCalibrationData</a></code></li>
+<li><code><a title="SEAVIEW.Calibrate.Calibrate.isCheckerboard" href="#SEAVIEW.Calibrate.Calibrate.isCheckerboard">isCheckerboard</a></code></li>
+<li><code><a title="SEAVIEW.Calibrate.Calibrate.readImage" href="#SEAVIEW.Calibrate.Calibrate.readImage">readImage</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="SEAVIEW.Calibrate.CalibrationData" href="#SEAVIEW.Calibrate.CalibrationData">CalibrationData</a></code></h4>
+<ul class="two-column">
+<li><code><a title="SEAVIEW.Calibrate.CalibrationData.dst" href="#SEAVIEW.Calibrate.CalibrationData.dst">dst</a></code></li>
+<li><code><a title="SEAVIEW.Calibrate.CalibrationData.error" href="#SEAVIEW.Calibrate.CalibrationData.error">error</a></code></li>
+<li><code><a title="SEAVIEW.Calibrate.CalibrationData.getImagePoints" href="#SEAVIEW.Calibrate.CalibrationData.getImagePoints">getImagePoints</a></code></li>
+<li><code><a title="SEAVIEW.Calibrate.CalibrationData.load" href="#SEAVIEW.Calibrate.CalibrationData.load">load</a></code></li>
+<li><code><a title="SEAVIEW.Calibrate.CalibrationData.mtx" href="#SEAVIEW.Calibrate.CalibrationData.mtx">mtx</a></code></li>
+<li><code><a title="SEAVIEW.Calibrate.CalibrationData.refmtx" href="#SEAVIEW.Calibrate.CalibrationData.refmtx">refmtx</a></code></li>
+<li><code><a title="SEAVIEW.Calibrate.CalibrationData.rvecs" href="#SEAVIEW.Calibrate.CalibrationData.rvecs">rvecs</a></code></li>
+<li><code><a title="SEAVIEW.Calibrate.CalibrationData.save" href="#SEAVIEW.Calibrate.CalibrationData.save">save</a></code></li>
+<li><code><a title="SEAVIEW.Calibrate.CalibrationData.tvecs" href="#SEAVIEW.Calibrate.CalibrationData.tvecs">tvecs</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>
