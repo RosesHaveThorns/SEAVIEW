@@ -1,5 +1,7 @@
 *.calib.npz
 *.bash
+vids/
+markers/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
