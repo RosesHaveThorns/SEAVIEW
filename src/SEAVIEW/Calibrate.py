@@ -1,4 +1,6 @@
 """Contains calibration support classes
+
+Credit: Unless otherwise stated, code by Rose Awen Brindle
 """
 
 from typing import List

@@ -1,5 +1,10 @@
 """Command line UI for SEAVIEW robotic fish tracking software
+
+Credit: Unless otherwise stated, code by Rose Awen Brindle
 """
+
+# python src/SEAVIEW/seaview.py vids/TEST_nomarkers.mp4 4
+
 
 import sys, argparse
 import cv2
@@ -28,7 +33,8 @@ class SeaView():
             cv2.destroyAllWindows()
             quit()
 
-        tracker = Tracker(self.vid_name, self.n_markers)
+        tracker = Tracker(self.vid_name, self.n_markers, self.calibration)
+        tracker.anaylse()
         
 
     def calibrate(self, subpxl_refinement):
