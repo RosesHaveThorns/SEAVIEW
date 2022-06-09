@@ -3,12 +3,13 @@
 Credit: Unless otherwise stated, code by Rose Awen Brindle
 """
 
+from tkinter import N
 import cv2
 import numpy as np
 
 import ImageHelpers
 
-low_green = np.array([25, 52, 72])
+low_green = np.array([25, 35, 5])
 high_green = np.array([102, 255, 255])
 
 class Tracker():
@@ -19,30 +20,76 @@ class Tracker():
         self.calib = calib
 
         self.frames = self.loadVideo(vidname)
+        self.n_markers = nmarkers
 
         self.data = []
 
     def anaylse(self):
-        # TODO preprocess img to make circles as visible as possible
-        # TODO identify circles
-        # TODO select circles most likely to be markers on fish robot
 
         for im in self.frames:
             ims_out = [] 
 
             ims_out.append(im.copy())
 
-            # basd on code by robert
+            # mask out non-green based on code by robert
             hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
             hsv = cv2.medianBlur(hsv, 9)
             
             blur_ex = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-            ims_out.append(blur_ex)
+            ims_out.append(blur_ex.copy())
 
             green_mask = cv2.inRange(hsv, low_green, high_green)
-            green = cv2.bitwise_and(im, im, mask=green_mask) 
+            green_circles = cv2.bitwise_and(im, im, mask=green_mask)
 
-            ims_out.append(green)
+            ims_out.append(green_circles.copy())
+
+            # place mask over white image
+            # circle detection works better this way as BLACK cross is not visible (is caught in the mask)
+            img_w, img_h, img_c = im.shape
+            white = ImageHelpers.makeBlank(img_w, img_h, (255, 255, 255))
+
+            blank_green_circles = cv2.bitwise_and(white, white, mask=green_mask)
+
+
+            # detect circles in the image
+            blank_green_circles = cv2.medianBlur(blank_green_circles, 9)
+            circles_flat = blank_green_circles[:,:, 1]
+            circles = cv2.HoughCircles(circles_flat, cv2.HOUGH_GRADIENT, 4, 100)
+
+            # check at least num_markers was found
+        
+            if circles is not None and len(circles[0]) >= self.n_markers-1:
+                print(f"Detected {len(circles[0])} in image, selecting smallest {self.n_markers-1}")
+
+                # convert the (x, y) coordinates and radius of the circles to integers
+                circles = np.round(circles[0, :]).astype("int")
+
+                tmp = blank_green_circles.copy()
+
+                # TODO select only smallest markers (detection occaisonaly draws a circle around two makers)
+
+
+                # loop over the (x, y) coordinates and radius of the circles
+                for (x, y, r) in circles:
+                    # calculate top left of marker bounding rect
+                    rectX = (x - r) 
+                    rectY = (y - r)
+
+                    # copy ROI of single marker to new empty image
+                    mask = np.zeros(im.shape,np.uint8)
+                    mask[rectY:y+r,rectX:x+r] = im[rectY:y+r,rectX:x+r]
+
+                    # draw circles and ROI on image
+                    cv2.circle(tmp, (x, y), r, (0, 0, 255), 4)
+                    cv2.rectangle(tmp, (rectX, rectY), (x + r, y + r), (0, 128, 255), 2)
+
+                ims_out.append(tmp.copy())
+
+                # TODO convex hull then find convexity defects. center point for each defect is middle corners of cross
+
+            else:
+                print("Minimum makers not detected, trying next frame")
+                ims_out.append(blank_green_circles.copy())
 
             # get user input
             k = cv2.waitKey(1) & 0xFF

@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.10.0" />
-<title>SEAVIEW.seaview API documentation</title>
-<meta name="description" content="Command line UI for SEAVIEW robotic fish tracking software …" />
+<title>SEAVIEW.ImageHelpers API documentation</title>
+<meta name="description" content="Image handling helper functions …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
@@ -19,10 +19,10 @@
 <main>
 <article id="content">
 <header>
-<h1 class="title">Module <code>SEAVIEW.seaview</code></h1>
+<h1 class="title">Module <code>SEAVIEW.ImageHelpers</code></h1>
 </header>
 <section id="section-intro">
-<p>Command line UI for SEAVIEW robotic fish tracking software</p>
+<p>Image handling helper functions</p>
 <p>Credit: Unless otherwise stated, code by Rose Awen Brindle</p>
 </section>
 <section>
@@ -30,33 +30,60 @@
 <section>
 </section>
 <section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="SEAVIEW.ImageHelpers.imageGrid"><code class="name flex">
+<span>def <span class="ident">imageGrid</span></span>(<span>imgs, w, h, final_w=300)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Merges a list of BGR images into a single image in a grid format
+All images must have the same shape. If w*h is more than the amount of images passed, empty space if filled white</p>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>ValueError</code></dt>
+<dd>Not all images have the same shape</dd>
+</dl>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>imgs</code></strong> :&ensp;<code>List</code></dt>
+<dd>List of BGR Images with the same shape</dd>
+<dt><strong><code>w</code></strong> :&ensp;<code>int</code></dt>
+<dd>Width of grid to be output</dd>
+<dt><strong><code>h</code></strong> :&ensp;<code>int</code></dt>
+<dd>Height of grid to be output</dd>
+<dt><strong><code>final_w</code></strong> :&ensp;<code>int, Optional</code></dt>
+<dd>Returned image will be resized to this width, height will scale with same ratio. Defaults to 300</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>BGR Image</code></dt>
+<dd>Single image made up of passed images in a grid</dd>
+</dl>
+<p>Credit: Based off of code by Philipp Gorczak, <a href="https://gist.github.com/pgorczak/95230f53d3f140e4939c">https://gist.github.com/pgorczak/95230f53d3f140e4939c</a></p></div>
+</dd>
+<dt id="SEAVIEW.ImageHelpers.makeBlank"><code class="name flex">
+<span>def <span class="ident">makeBlank</span></span>(<span>w, h, colour=(100, 0, 255))</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Returns an image of given shape filled with only given colour
+Automaticly selects image depth (c) based on length of 'colour' argument</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>w</code></strong> :&ensp;<code>int</code></dt>
+<dd>Width of required image</dd>
+<dt><strong><code>h</code></strong> :&ensp;<code>int</code></dt>
+<dd>Height of required image</dd>
+</dl>
+<p>colour ((int, int, int), Optional): Colour image should be filled with. Defaults to white, (255, 255, 255)</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>BGR Image</code></dt>
+<dd>Blank image filled with requested colour</dd>
+</dl></div>
+</dd>
+</dl>
 </section>
 <section>
-<h2 class="section-title" id="header-classes">Classes</h2>
-<dl>
-<dt id="SEAVIEW.seaview.SeaView"><code class="flex name class">
-<span>class <span class="ident">SeaView</span></span>
-<span>(</span><span>vid_name, n_markers, camera_id=1)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Tracking and calibration interface</p></div>
-<h3>Methods</h3>
-<dl>
-<dt id="SEAVIEW.seaview.SeaView.calibrate"><code class="name flex">
-<span>def <span class="ident">calibrate</span></span>(<span>self, subpxl_refinement)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Run calibration UI, using images from webcam which include checkerboards</p></div>
-</dd>
-<dt id="SEAVIEW.seaview.SeaView.track"><code class="name flex">
-<span>def <span class="ident">track</span></span>(<span>self)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Track robotic fish position in video frames</p></div>
-</dd>
-</dl>
-</dd>
-</dl>
 </section>
 </article>
 <nav id="sidebar">
@@ -70,15 +97,10 @@
 <li><code><a title="SEAVIEW" href="index.html">SEAVIEW</a></code></li>
 </ul>
 </li>
-<li><h3><a href="#header-classes">Classes</a></h3>
-<ul>
-<li>
-<h4><code><a title="SEAVIEW.seaview.SeaView" href="#SEAVIEW.seaview.SeaView">SeaView</a></code></h4>
+<li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="SEAVIEW.seaview.SeaView.calibrate" href="#SEAVIEW.seaview.SeaView.calibrate">calibrate</a></code></li>
-<li><code><a title="SEAVIEW.seaview.SeaView.track" href="#SEAVIEW.seaview.SeaView.track">track</a></code></li>
-</ul>
-</li>
+<li><code><a title="SEAVIEW.ImageHelpers.imageGrid" href="#SEAVIEW.ImageHelpers.imageGrid">imageGrid</a></code></li>
+<li><code><a title="SEAVIEW.ImageHelpers.makeBlank" href="#SEAVIEW.ImageHelpers.makeBlank">makeBlank</a></code></li>
 </ul>
 </li>
 </ul>
