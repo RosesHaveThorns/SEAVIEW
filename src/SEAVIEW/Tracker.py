@@ -59,18 +59,41 @@ class Tracker():
             # check at least num_markers was found
         
             if circles is not None and len(circles[0]) >= self.n_markers-1:
-                print(f"Detected {len(circles[0])} in image, selecting smallest {self.n_markers-1}")
+                print(f"Detected {len(circles[0])} in image")
 
                 # convert the (x, y) coordinates and radius of the circles to integers
                 circles = np.round(circles[0, :]).astype("int")
 
                 tmp = blank_green_circles.copy()
 
-                # TODO select only smallest markers (detection occaisonaly draws a circle around two makers)
+                # select circles with most similar radius
+                # order list by r
+                # loop through, tracking index of lowest sum of n consecutive numbers
 
+                if len(circles) > self.n_markers-1:
+                    circles_sort = np.sort(circles, axis=0)
+
+                    last_max = sum(circles_sort[0:self.n_markers-1])
+                    last_max_i = 0 # index for start of most similar numbers
+
+                    for i in range(len(circles_sort)-self.n_markers-1):
+                        total = sum(circles_sort[i:i+self.n_markers-1])
+                        if total > last_max:
+                            last_max = total
+                            last_max_i = i
+
+                    final_circles = circles_sort[last_max_i:last_max_i+self.n_markers-1]
+
+                    print(f"Too many circles detected, selecting {self.n_markers-1} with most similar radius:")
+                    print(circles_sort)
+                    print("Final Selection:")
+                    print(final_circles)
+
+                else:
+                    final_circles = circles
 
                 # loop over the (x, y) coordinates and radius of the circles
-                for (x, y, r) in circles:
+                for (x, y, r) in final_circles:
                     # calculate top left of marker bounding rect
                     rectX = (x - r) 
                     rectY = (y - r)
