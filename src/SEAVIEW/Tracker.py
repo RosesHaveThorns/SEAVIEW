@@ -3,31 +3,81 @@
 Credit: Unless otherwise stated, code by Rose Awen Brindle
 """
 
-from tkinter import N
 import cv2
 import numpy as np
 
 import ImageHelpers
+import HSVTester
 
-low_green = np.array([25, 35, 5])
-high_green = np.array([102, 255, 255])
+# - greenblue -
+# h 76-161
+# s 161-255
+# v 0-152
+
+# greenblack
+# hMin = 0 , sMin = 36, vMin = 0), (hMax = 170 , sMax = 255, vMax = 210)
+
+# - blue -
+# h 95-132
+# s 150-255
+# v 0-255
+# (hMin = 95 , sMin = 147, vMin = 0), (hMax = 132 , sMax = 255, vMax = 255)
+
+# black
+# (hMin = 96 , sMin = 69, vMin = 0), (hMax = 179 , sMax = 255, vMax = 224)
+
+# - redblue -
+# h 0-179
+# s 141-255
+# v 88-255
+
+#(hMin = 0 , sMin = 38, vMin = 0), (hMax = 179 , sMax = 255, vMax = 63)
+low_blackgreen = np.array([0, 0, 0])
+high_blackgreen = np.array([180, 255, 255])
+
+low_black = np.array([0, 0, 0])
+high_black = np.array([180, 255, 225])
+
+hsv_filters_filename = "hsvfilters"
 
 class Tracker():
 
     def __init__(self, vidname, nmarkers, calib):
-        """
-        """
+        global low_blackgreen, high_blackgreen, low_black, high_black
+
         self.calib = calib
 
-        self.frames = self.loadVideo(vidname)
+        # load video
+        self.frames = ImageHelpers.loadVideo(vidname, scaled_w=1000)
         self.n_markers = nmarkers
+
+        # load last hsv filter values
+        try:
+            loaded = np.load(hsv_filters_filename + ".hsv.npz")
+            low_blackgreen = loaded['low_g']
+            high_blackgreen = loaded['high_g']
+            low_black = loaded['low_b']
+            high_black = loaded['high_b']
+
+        except:
+            print(f"Could not load hsv filters file '{hsv_filters_filename}.hsv.npz', defaulting")
+
+        # allow user to change hsv filter vals
+        low_blackgreen, high_blackgreen = HSVTester.hsvFilterSelect(self.frames, low_blackgreen, high_blackgreen)
+        low_black, high_black = HSVTester.hsvFilterSelect(self.frames, low_black, high_black)
+
+        # save new hsv filter vals
+        np.savez_compressed(hsv_filters_filename + ".hsv", low_g=low_blackgreen, high_g=high_blackgreen, low_b=low_black, high_b=high_black)
 
         self.data = []
 
     def anaylse(self):
+        global low_blackgreen, high_blackgreen, low_black, high_black
 
         for im in self.frames:
             ims_out = [] 
+
+            #im = self.undistort(im)
 
             ims_out.append(im.copy())
 
@@ -38,7 +88,7 @@ class Tracker():
             blur_ex = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
             ims_out.append(blur_ex.copy())
 
-            green_mask = cv2.inRange(hsv, low_green, high_green)
+            green_mask = cv2.inRange(hsv, low_blackgreen, high_blackgreen)
             green_circles = cv2.bitwise_and(im, im, mask=green_mask)
 
             ims_out.append(green_circles.copy())
@@ -59,12 +109,12 @@ class Tracker():
             # check at least num_markers was found
         
             if circles is not None and len(circles[0]) >= self.n_markers-1:
-                print(f"Detected {len(circles[0])} in image")
+                print(f"Detected {len(circles[0])} circles in image")
 
                 # convert the (x, y) coordinates and radius of the circles to integers
                 circles = np.round(circles[0, :]).astype("int")
 
-                tmp = blank_green_circles.copy()
+                tmp_img = blank_green_circles.copy()
 
                 # select circles with most similar radius
                 # order list by r
@@ -73,18 +123,18 @@ class Tracker():
                 if len(circles) > self.n_markers-1:
                     circles_sort = np.sort(circles, axis=0)
 
-                    last_max = sum(circles_sort[0:self.n_markers-1])
+                    last_max = np.sum(circles_sort[0:self.n_markers-1])
                     last_max_i = 0 # index for start of most similar numbers
 
                     for i in range(len(circles_sort)-self.n_markers-1):
-                        total = sum(circles_sort[i:i+self.n_markers-1])
+                        total = np.sum(circles_sort[i:i+self.n_markers-1])
                         if total > last_max:
                             last_max = total
                             last_max_i = i
 
                     final_circles = circles_sort[last_max_i:last_max_i+self.n_markers-1]
 
-                    print(f"Too many circles detected, selecting {self.n_markers-1} with most similar radius:")
+                    print(f"Too many circles detected, selecting {self.n_markers-1} with most similar radius from:")
                     print(circles_sort)
                     print("Final Selection:")
                     print(final_circles)
@@ -93,23 +143,83 @@ class Tracker():
                     final_circles = circles
 
                 # loop over the (x, y) coordinates and radius of the circles
+                rois = [] # ROI images
                 for (x, y, r) in final_circles:
                     # calculate top left of marker bounding rect
                     rectX = (x - r) 
                     rectY = (y - r)
 
                     # copy ROI of single marker to new empty image
-                    mask = np.zeros(im.shape,np.uint8)
+                    mask = np.zeros((im.shape[0], im.shape[1], 3), np.uint8)
                     mask[rectY:y+r,rectX:x+r] = im[rectY:y+r,rectX:x+r]
+                    rois.append(mask)
 
                     # draw circles and ROI on image
-                    cv2.circle(tmp, (x, y), r, (0, 0, 255), 4)
-                    cv2.rectangle(tmp, (rectX, rectY), (x + r, y + r), (0, 128, 255), 2)
+                    cv2.circle(tmp_img, (x, y), r, (0, 0, 255), 4)
+                    cv2.rectangle(tmp_img, (rectX, rectY), (x + r, y + r), (0, 128, 255), 2)
 
-                ims_out.append(tmp.copy())
+                ims_out.append(tmp_img.copy())
 
+                # get centre of marker from cross
                 # TODO convex hull then find convexity defects. center point for each defect is middle corners of cross
+                # TODO rois are full image, with everything else masked
+                contour_imgs = []
+                thresh_imgs = []
+                for i in range(len(rois)):
 
+                    # preprocess
+                    #gray = cv2.cvtColor(rois[i], cv2.COLOR_BGR2GRAY)
+                    #blur = cv2.blur(gray, (3, 3))
+                    #ret, thresh = cv2.threshold(blur, 250, 255, cv2.THRESH_BINARY_INV)
+                    # thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+
+                    # blank_red = ImageHelpers.makeBlank(blur.shape[0], blur.shape[1], (0, 0, 255))
+                    # blank_red = cv2.bitwise_and(blank_red, blank_red, mask=thresh)
+                    # thresh_over_blur = cv2.bitwise_or(cv2.cvtColor(blur, cv2.COLOR_GRAY2BGR), blank_red)
+                    # thresh_imgs.append(blank_red)
+
+                    # TODO consistent seperation of ONLY cross in each circle
+                    # maybe try similar colour cross, but different bright/darkness
+                    # or try blue cross, and look for blue and green or blue and red during circle seperation 
+                    roi_im = rois[i].copy()
+                    hsv = cv2.cvtColor(roi_im, cv2.COLOR_BGR2HSV)
+                    hsv = cv2.medianBlur(hsv, 9)
+
+                    cross_mask = cv2.inRange(hsv, low_black, high_black)
+                    contours_img = cv2.bitwise_and(roi_im, roi_im, mask=cross_mask)
+
+                    contours_img = cv2.cvtColor(contours_img, cv2.COLOR_HSV2BGR)
+                    contours_img = cv2.cvtColor(contours_img, cv2.COLOR_BGR2GRAY)
+
+                    # find contours
+                    contours, hierarchy = cv2.findContours(contours_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+                    # get convex hulls of contours
+                    hull = []
+
+                    for i in range(len(contours)):
+                        hull.append(cv2.convexHull(contours[i], False))
+
+                    # draw contours and hull points
+                    cv2.drawContours(contours_img, contours, -1, (0, 255, 0), 3, 8, hierarchy)
+                    cv2.drawContours(contours_img, hull, -1, (255, 0, 0), 3, 8)
+                    contour_imgs.append(cv2.cvtColor(contours_img, cv2.COLOR_GRAY2BGR))
+                    #ims_out.append(cv2.cvtColor(contours_img, cv2.COLOR_GRAY2BGR))
+
+                # merge threshold images
+                all_thresh_imgs = np.zeros((contour_imgs[0].shape[0], contour_imgs[0].shape[1], 3), np.uint8)
+                for im in thresh_imgs:
+                    all_thresh_imgs = cv2.bitwise_or(all_thresh_imgs, im)
+
+                ims_out.append(all_thresh_imgs)
+
+                # merge contour images
+                all_contours_img = np.zeros((contour_imgs[0].shape[0], contour_imgs[0].shape[1], 3), np.uint8)
+                for im in contour_imgs:
+                    all_contours_img = cv2.bitwise_or(all_contours_img, im)
+
+                ims_out.append(all_contours_img)
+                
             else:
                 print("Minimum makers not detected, trying next frame")
                 ims_out.append(blank_green_circles.copy())
@@ -126,44 +236,9 @@ class Tracker():
                     pass
 
             # show result
-            out_im = ImageHelpers.imageGrid(ims_out, len(ims_out), 1, 1000)
+            out_im = ImageHelpers.imageGrid(ims_out, len(ims_out), 1, 1400)
             cv2.imshow("Frame", out_im)
 
-
-    def loadVideo(self, vidname):
-        """Load a video from file
-
-        Raises:
-            FileNotFoundError: Unable to load video with given name
-
-        Args:
-            vidname (str): Filename of video containing fish robot tracking markers
-
-        Returns:
-            List: Array of frames from the video
-        """
-
-        # open video
-        vid = cv2.VideoCapture(vidname)
-
-        if not vid.isOpened(): 
-            raise FileNotFoundError("Unable to load video with that name, did you make a typo?")
-
-        # read frames to array
-        arr = []
-        while vid.isOpened():
-            ret, im = vid.read()
-
-            if not ret:
-                break
-
-            arr.append(im)
-        
-        print(f"Loaded {len(arr)} frames from video")
-
-        # release and return
-        vid.release()
-        return arr
 
     def undistort(self, img):
         """Remove distortion from an image using camera calibration data
@@ -175,5 +250,5 @@ class Tracker():
             BGR Image: Undistorted image
         """
         
-        undistorted = cv2.undistort(img, self.calib.mtx, self.calib.dst, None, self.calib.ref_mtx)
+        undistorted = cv2.undistort(img, self.calib.mtx, self.calib.dst, None, self.calib.refmtx)
         return undistorted

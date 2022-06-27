@@ -7,6 +7,8 @@ from typing import List
 import cv2
 import numpy as np
 
+import ImageHelpers
+
 class CalibrationData(object):
     
     def __init__(self, mtx=None, dist=None, rvecs=None, tvecs=None, refined_mtx=None, image_pts=None, object_pts=None):
@@ -111,12 +113,12 @@ class CalibrationData(object):
 
 class Calibrate():
 
-    def __init__(self, cb_size, cam_id=0, subpx_refinement = True):
+    def __init__(self, cb_size, vid, subpx_refinement = True):
         """Initialise Calibrate object
 
         Args:
             cb_size (tuple): Size, in squares, of calibration checkerboard in (int, int) format.
-            cam_id (int, optional): Webcam id to be used as image source. Defaults to 0.
+            vid (str): File address of calibration video
             subpx_refinement (bool, optional): Use sub pixel refinement during calibration. Defaults to True.
         """
 
@@ -138,8 +140,12 @@ class Calibrate():
         self.objp = np.zeros((1, self.CHECKERBOARD[0] * self.CHECKERBOARD[1], 3), np.float32)
         self.objp[0, :, :2] = np.mgrid[0:self.CHECKERBOARD[0], 0:self.CHECKERBOARD[1]].T.reshape(-1, 2)
 
-        # get webcam capture object
-        self.cam = cv2.VideoCapture(cam_id)
+        # get video frames
+        self.frames = ImageHelpers.loadVideo(vid, 500)
+
+        # preprocess frames
+        for i in range(len(self.frames)):        
+            self.frames[i] = cv2.cvtColor(self.frames[i], cv2.COLOR_BGR2GRAY)
 
     def getCalibrationData(self):
         """Returns current calibration data object if calibration calculation has been completed
@@ -218,27 +224,11 @@ class Calibrate():
         found, corners = cv2.findChessboardCorners(image, self.CHECKERBOARD, cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_FAST_CHECK + cv2.CALIB_CB_NORMALIZE_IMAGE)
         return found, corners
 
-    def readImage(self):
-        """Reads and preprocesses an image from the webcam
-
-        Returns:
-            Grayscale Image: opencv grayscale preprocessed image from webcam
-        """
-        ret, newimg = self.cam.read()
-
-        if not ret:
-            print("Failed to read camera")
-            image = cv2.imread("error.jpg")
-
-        image = cv2.cvtColor(newimg, cv2.COLOR_BGR2GRAY)
-
-        return image
-
     def drawCheckerboardMarkers(self, image, found_checkerboard, corners=None):
         """Draw markers showing where checkerboard corners have been recognised on given image. Has no effect on calibration. Use after analyseImage has been called.
 
         Args:
-            image (Grayscale Image): The image to draw markers on
+            image (BGR Image): The image to draw markers on
             found_checkerboard (bool): Indicates if a checkerboard is in the image, intended to be passed from isCheckerboard or analyseImage
             corners (array, Optional): Pass the array of checkerboard corners found if using with isCheckerboard. Do not include if using with analyseImage
 
@@ -248,4 +238,4 @@ class Calibrate():
 
         if corners is None:
             corners = self.imagePoints[-1]
-        return cv2.drawChessboardCorners(cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), self.CHECKERBOARD, corners, found_checkerboard)
+        return cv2.drawChessboardCorners(image, self.CHECKERBOARD, corners, found_checkerboard)

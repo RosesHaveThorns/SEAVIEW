@@ -6,6 +6,7 @@ Credit: Unless otherwise stated, code by Rose Awen Brindle
 import itertools
 import numpy as np
 import imutils
+import cv2
 
 def imageGrid(imgs, w, h, final_w=300):
     """Merges a list of BGR images into a single image in a grid format
@@ -70,3 +71,51 @@ def makeBlank(w, h, colour=(100, 0, 255)):
     image[:] = colour
 
     return image
+
+def loadVideo(vidname, scaled_w=-1):
+    """Load a video from file
+
+    Raises:
+        FileNotFoundError: Unable to load video with given name
+
+    Args:
+        vidname (str): Filename of video containing fish robot tracking markers
+
+    Returns:
+        List: Array of frames from the video
+    """
+
+    # open video
+    vid = cv2.VideoCapture(vidname)
+
+    if not vid.isOpened(): 
+        raise FileNotFoundError("Unable to load video with that name, did you make a typo?")
+
+    # read frames to array
+    arr = []
+
+    count = 1
+    while True:
+        ret, im = vid.read()
+
+        if not ret:
+            print(f"Failed to read frame, attempt {count}")
+            count +=1
+            if count > 10:
+                break
+            continue
+
+        if scaled_w > 0:
+            im = imutils.resize(im, width=scaled_w)
+        
+        count = 1
+        arr.append(im)
+
+        if len(arr) % 20 == 0:
+            print(f"Loaded frame {len(arr)}")
+    
+    print(f"Loaded {len(arr)} frames from video")
+
+    # release and return
+    vid.release()
+    return arr
