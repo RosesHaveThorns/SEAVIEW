@@ -34,6 +34,7 @@ def hsvFilterSelect(frames, init_low=np.array([0,0,0]), init_high=np.array([179,
     i = 0
     while(1):
         img = imutils.resize(frames[i], height=500)
+        cv2.medianBlur(img, 9)
         output = img
    
         # get current positions of all trackbars

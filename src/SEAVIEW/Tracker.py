@@ -83,28 +83,27 @@ class Tracker():
 
             # mask out non-green based on code by robert
             hsv = cv2.cvtColor(im, cv2.COLOR_BGR2HSV)
-            hsv = cv2.medianBlur(hsv, 9)
-            
-            blur_ex = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-            ims_out.append(blur_ex.copy())
+            hsv = cv2.GaussianBlur(hsv, (7, 7), 1.5)
 
             green_mask = cv2.inRange(hsv, low_blackgreen, high_blackgreen)
-            green_circles = cv2.bitwise_and(im, im, mask=green_mask)
+            green_circles = cv2.bitwise_and(hsv, hsv, mask=green_mask)
+            green_circles = cv2.GaussianBlur(green_circles, (7, 7), 2)
 
-            ims_out.append(green_circles.copy())
+            
 
             # place mask over white image
             # circle detection works better this way as BLACK cross is not visible (is caught in the mask)
             img_w, img_h, img_c = im.shape
-            white = ImageHelpers.makeBlank(img_w, img_h, (255, 255, 255))
+            #white = ImageHelpers.makeBlank(img_w, img_h, (255, 255, 255))
 
-            blank_green_circles = cv2.bitwise_and(white, white, mask=green_mask)
+            #blank_green_circles = cv2.bitwise_and(white, white, mask=green_mask)
 
 
             # detect circles in the image
-            blank_green_circles = cv2.medianBlur(blank_green_circles, 9)
-            circles_flat = blank_green_circles[:,:, 1]
-            circles = cv2.HoughCircles(circles_flat, cv2.HOUGH_GRADIENT, 4, 100)
+            #blank_green_circles = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+            ims_out.append(green_circles.copy())
+            blank_green_circles = cv2.cvtColor(green_circles, cv2.COLOR_BGR2GRAY)
+            circles = cv2.HoughCircles(blank_green_circles, cv2.HOUGH_GRADIENT, 2, 50)
 
             # check at least num_markers was found
         
@@ -114,7 +113,7 @@ class Tracker():
                 # convert the (x, y) coordinates and radius of the circles to integers
                 circles = np.round(circles[0, :]).astype("int")
 
-                tmp_img = blank_green_circles.copy()
+                tmp_img = im.copy()
 
                 # select circles with most similar radius
                 # order list by r
@@ -163,20 +162,11 @@ class Tracker():
                 # get centre of marker from cross
                 # TODO convex hull then find convexity defects. center point for each defect is middle corners of cross
                 # TODO rois are full image, with everything else masked
-                contour_imgs = []
-                thresh_imgs = []
+
+                tmp_img = im.copy()
                 for i in range(len(rois)):
 
                     # preprocess
-                    #gray = cv2.cvtColor(rois[i], cv2.COLOR_BGR2GRAY)
-                    #blur = cv2.blur(gray, (3, 3))
-                    #ret, thresh = cv2.threshold(blur, 250, 255, cv2.THRESH_BINARY_INV)
-                    # thresh = cv2.adaptiveThreshold(blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
-
-                    # blank_red = ImageHelpers.makeBlank(blur.shape[0], blur.shape[1], (0, 0, 255))
-                    # blank_red = cv2.bitwise_and(blank_red, blank_red, mask=thresh)
-                    # thresh_over_blur = cv2.bitwise_or(cv2.cvtColor(blur, cv2.COLOR_GRAY2BGR), blank_red)
-                    # thresh_imgs.append(blank_red)
 
                     # TODO consistent seperation of ONLY cross in each circle
                     # maybe try similar colour cross, but different bright/darkness
@@ -201,28 +191,17 @@ class Tracker():
                         hull.append(cv2.convexHull(contours[i], False))
 
                     # draw contours and hull points
-                    cv2.drawContours(contours_img, contours, -1, (0, 255, 0), 3, 8, hierarchy)
-                    cv2.drawContours(contours_img, hull, -1, (255, 0, 0), 3, 8)
-                    contour_imgs.append(cv2.cvtColor(contours_img, cv2.COLOR_GRAY2BGR))
-                    #ims_out.append(cv2.cvtColor(contours_img, cv2.COLOR_GRAY2BGR))
+                    cv2.drawContours(tmp_img, contours, -1, (0, 255, 0), 3, 8, hierarchy)
+                    cv2.drawContours(tmp_img, hull, -1, (255, 0, 0), 3, 8)
 
-                # merge threshold images
-                all_thresh_imgs = np.zeros((contour_imgs[0].shape[0], contour_imgs[0].shape[1], 3), np.uint8)
-                for im in thresh_imgs:
-                    all_thresh_imgs = cv2.bitwise_or(all_thresh_imgs, im)
-
-                ims_out.append(all_thresh_imgs)
-
-                # merge contour images
-                all_contours_img = np.zeros((contour_imgs[0].shape[0], contour_imgs[0].shape[1], 3), np.uint8)
-                for im in contour_imgs:
-                    all_contours_img = cv2.bitwise_or(all_contours_img, im)
-
-                ims_out.append(all_contours_img)
+                ims_out.append(tmp_img.copy())
                 
             else:
                 print("Minimum makers not detected, trying next frame")
-                ims_out.append(blank_green_circles.copy())
+                ims_out.append(im.copy())
+                ims_out.append(im.copy())
+
+
 
             # get user input
             k = cv2.waitKey(1) & 0xFF
