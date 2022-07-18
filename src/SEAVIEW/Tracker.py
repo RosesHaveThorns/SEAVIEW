@@ -103,7 +103,7 @@ class Tracker():
             #blank_green_circles = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
             ims_out.append(green_circles.copy())
             blank_green_circles = cv2.cvtColor(green_circles, cv2.COLOR_BGR2GRAY)
-            circles = cv2.HoughCircles(blank_green_circles, cv2.HOUGH_GRADIENT, 3 50)
+            circles = cv2.HoughCircles(blank_green_circles, cv2.HOUGH_GRADIENT, 3, 50)
 
             # check at least num_markers was found
         
@@ -143,6 +143,7 @@ class Tracker():
 
                 # loop over the (x, y) coordinates and radius of the circles
                 rois = [] # ROI images
+                rois_pos = [] # min and max y and x pos for the roi
                 for (x, y, r) in final_circles:
                     # calculate top left of marker bounding rect
                     rectX = (x - r) 
@@ -152,6 +153,7 @@ class Tracker():
                     mask = np.zeros((im.shape[0], im.shape[1], 3), np.uint8)
                     mask[rectY:y+r,rectX:x+r] = im[rectY:y+r,rectX:x+r]
                     rois.append(mask)
+                    rois_pos.append([rectY, y+r, rectX, x+r])
 
                     # draw circles and ROI on image
                     cv2.circle(tmp_img, (x, y), r, (0, 0, 255), 4)
@@ -172,17 +174,23 @@ class Tracker():
                     # maybe try similar colour cross, but different bright/darkness
                     # or try blue cross, and look for blue and green or blue and red during circle seperation 
                     roi_im = rois[i].copy()
-                    hsv = cv2.cvtColor(roi_im, cv2.COLOR_BGR2HSV)
-                    hsv = cv2.medianBlur(hsv, 9)
+                    #hsv = cv2.cvtColor(roi_im, cv2.COLOR_BGR2HSV)
+                    hsv = cv2.GaussianBlur(roi_im, (7, 7), 1.5)
 
-                    cross_mask = cv2.inRange(hsv, low_black, high_black)
-                    contours_img = cv2.bitwise_and(roi_im, roi_im, mask=cross_mask)
+                    #cross_mask = cv2.inRange(hsv, low_black, high_black)
+                    #contours_img = cv2.bitwise_and(roi_im, roi_im, mask=cross_mask)
 
-                    contours_img = cv2.cvtColor(contours_img, cv2.COLOR_HSV2BGR)
-                    contours_img = cv2.cvtColor(contours_img, cv2.COLOR_BGR2GRAY)
+                    #contours_img = cv2.cvtColor(contours_img, cv2.COLOR_HSV2BGR)
+                    contours_img_gry = cv2.cvtColor(hsv, cv2.COLOR_BGR2GRAY)
+
+                    contours_img = cv2.Canny(hsv, 15, 17)
+                    contours_img_canny = cv2.cvtColor(contours_img, cv2.COLOR_GRAY2BGR)
+
+                    # copy processed roi to tmp img
+                    tmp_img[rois_pos[i][0]:rois_pos[i][1], rois_pos[i][2]:rois_pos[i][3]] = contours_img_canny[rois_pos[i][0]:rois_pos[i][1], rois_pos[i][2]:rois_pos[i][3]]
 
                     # find contours
-                    contours, hierarchy = cv2.findContours(contours_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                    contours, hierarchy = cv2.findContours(contours_img_gry, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
                     # get convex hulls of contours
                     hull = []
@@ -191,8 +199,8 @@ class Tracker():
                         hull.append(cv2.convexHull(contours[i], False))
 
                     # draw contours and hull points
-                    cv2.drawContours(tmp_img, contours, -1, (0, 255, 0), 3, 8, hierarchy)
-                    cv2.drawContours(tmp_img, hull, -1, (255, 0, 0), 3, 8)
+                    #cv2.drawContours(tmp_img, contours, -1, (0, 255, 0), 3, 8, hierarchy)
+                    #cv2.drawContours(tmp_img, hull, -1, (255, 0, 0), 3, 8)
 
                 ims_out.append(tmp_img.copy())
                 
