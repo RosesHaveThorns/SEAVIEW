@@ -103,7 +103,7 @@ class Tracker():
             #blank_green_circles = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
             ims_out.append(green_circles.copy())
             blank_green_circles = cv2.cvtColor(green_circles, cv2.COLOR_BGR2GRAY)
-            circles = cv2.HoughCircles(blank_green_circles, cv2.HOUGH_GRADIENT, 2, 50)
+            circles = cv2.HoughCircles(blank_green_circles, cv2.HOUGH_GRADIENT, 3 50)
 
             # check at least num_markers was found
         
