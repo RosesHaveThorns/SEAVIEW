@@ -48,7 +48,7 @@ class Tracker():
         self.calib = calib
 
         # load video
-        self.frames = ImageHelpers.loadVideo(vidname, scaled_w=1000)
+        self.frames = ImageHelpers.loadVideo(vidname, scaled_w=2000)
         self.n_markers = nmarkers
 
         # load last hsv filter values
@@ -150,7 +150,7 @@ class Tracker():
                     rectY = (y - r)
 
                     # copy ROI of single marker to new empty image
-                    mask = np.zeros((im.shape[0], im.shape[1], 3), np.uint8)
+                    mask = np.full((im.shape[0], im.shape[1], 3), np.full((3),230), dtype=np.uint8)
                     mask[rectY:y+r,rectX:x+r] = im[rectY:y+r,rectX:x+r]
                     rois.append(mask)
                     rois_pos.append([rectY, y+r, rectX, x+r])
@@ -183,14 +183,14 @@ class Tracker():
                     #contours_img = cv2.cvtColor(contours_img, cv2.COLOR_HSV2BGR)
                     contours_img_gry = cv2.cvtColor(hsv, cv2.COLOR_BGR2GRAY)
 
-                    contours_img = cv2.Canny(hsv, 15, 17)
+                    contours_img = cv2.Canny(hsv, 20, 30)
                     contours_img_canny = cv2.cvtColor(contours_img, cv2.COLOR_GRAY2BGR)
 
                     # copy processed roi to tmp img
                     tmp_img[rois_pos[i][0]:rois_pos[i][1], rois_pos[i][2]:rois_pos[i][3]] = contours_img_canny[rois_pos[i][0]:rois_pos[i][1], rois_pos[i][2]:rois_pos[i][3]]
 
                     # find contours
-                    contours, hierarchy = cv2.findContours(contours_img_gry, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                    contours, hierarchy = cv2.findContours(contours_img_gry, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
                     # get convex hulls of contours
                     hull = []
@@ -198,9 +198,11 @@ class Tracker():
                     for i in range(len(contours)):
                         hull.append(cv2.convexHull(contours[i], False))
 
+                    print('Found', len(contours), 'contours in circle')
+
                     # draw contours and hull points
-                    #cv2.drawContours(tmp_img, contours, -1, (0, 255, 0), 3, 8, hierarchy)
-                    #cv2.drawContours(tmp_img, hull, -1, (255, 0, 0), 3, 8)
+                    cv2.drawContours(tmp_img, contours, -1, (0, 255, 0), 3, 8)
+                    cv2.drawContours(tmp_img, hull, -1, (255, 0, 0), 3, 8)
 
                 ims_out.append(tmp_img.copy())
                 
