@@ -5,33 +5,13 @@ Credit: Unless otherwise stated, code by Rose Awen Brindle
 
 import cv2
 import numpy as np
+import csv
+
+from dataclasses import dataclass
 
 import ImageHelpers
 import HSVTester
 
-# - greenblue -
-# h 76-161
-# s 161-255
-# v 0-152
-
-# greenblack
-# hMin = 0 , sMin = 36, vMin = 0), (hMax = 170 , sMax = 255, vMax = 210)
-
-# - blue -
-# h 95-132
-# s 150-255
-# v 0-255
-# (hMin = 95 , sMin = 147, vMin = 0), (hMax = 132 , sMax = 255, vMax = 255)
-
-# black
-# (hMin = 96 , sMin = 69, vMin = 0), (hMax = 179 , sMax = 255, vMax = 224)
-
-# - redblue -
-# h 0-179
-# s 141-255
-# v 88-255
-
-#(hMin = 0 , sMin = 38, vMin = 0), (hMax = 179 , sMax = 255, vMax = 63)
 low_blackgreen = np.array([0, 0, 0])
 high_blackgreen = np.array([180, 255, 255])
 
@@ -39,6 +19,11 @@ low_black = np.array([0, 0, 0])
 high_black = np.array([180, 255, 225])
 
 hsv_filters_filename = "hsvfilters"
+
+@dataclass
+class Point:
+    x: float
+    y: float
 
 class Tracker():
 
@@ -48,7 +33,7 @@ class Tracker():
         self.calib = calib
 
         # load video
-        self.frames = ImageHelpers.loadVideo(vidname, scaled_w=2000)
+        self.frames, self.framenums = ImageHelpers.loadVideo(vidname, scaled_w=2000, every_x=2, max_frames=60, ret_frame_nums=True)
         self.n_markers = nmarkers
 
         # load last hsv filter values
@@ -74,7 +59,7 @@ class Tracker():
     def anaylse(self):
         global low_blackgreen, high_blackgreen, low_black, high_black
 
-        for im in self.frames:
+        for im, framenum in zip(self.frames, self.framenums):
             ims_out = [] 
 
             #im = self.undistort(im)
@@ -144,10 +129,12 @@ class Tracker():
                 # loop over the (x, y) coordinates and radius of the circles
                 rois = [] # ROI images
                 rois_pos = [] # min and max y and x pos for the roi
+                ROI_PADDING = 20
                 for (x, y, r) in final_circles:
                     # calculate top left of marker bounding rect
-                    rectX = (x - r) 
-                    rectY = (y - r)
+                    r = r + ROI_PADDING
+                    rectX = x - r
+                    rectY = y - r
 
                     # copy ROI of single marker to new empty image
                     mask = np.full((im.shape[0], im.shape[1], 3), np.full((3),230), dtype=np.uint8)
@@ -156,7 +143,7 @@ class Tracker():
                     rois_pos.append([rectY, y+r, rectX, x+r])
 
                     # draw circles and ROI on image
-                    cv2.circle(tmp_img, (x, y), r, (0, 0, 255), 4)
+                    cv2.circle(tmp_img, (x, y), r-ROI_PADDING, (0, 0, 255), 4)
                     cv2.rectangle(tmp_img, (rectX, rectY), (x + r, y + r), (0, 128, 255), 2)
 
                 ims_out.append(tmp_img.copy())
@@ -166,15 +153,14 @@ class Tracker():
                 # TODO rois are full image, with everything else masked
 
                 tmp_img = im.copy()
+                kernel = np.ones((5,5), np.uint8)
                 for i in range(len(rois)):
 
                     # preprocess
 
-                    # TODO consistent seperation of ONLY cross in each circle
-                    # maybe try similar colour cross, but different bright/darkness
-                    # or try blue cross, and look for blue and green or blue and red during circle seperation 
                     roi_im = rois[i].copy()
                     #hsv = cv2.cvtColor(roi_im, cv2.COLOR_BGR2HSV)
+                    
                     hsv = cv2.GaussianBlur(roi_im, (7, 7), 1.5)
 
                     #cross_mask = cv2.inRange(hsv, low_black, high_black)
@@ -184,27 +170,75 @@ class Tracker():
                     contours_img_gry = cv2.cvtColor(hsv, cv2.COLOR_BGR2GRAY)
 
                     contours_img = cv2.Canny(hsv, 20, 30)
-                    contours_img_canny = cv2.cvtColor(contours_img, cv2.COLOR_GRAY2BGR)
+
+                    contours_img = cv2.dilate(contours_img, kernel, iterations=1)
 
                     # copy processed roi to tmp img
+                    contours_img_canny = cv2.cvtColor(contours_img, cv2.COLOR_GRAY2BGR)
                     tmp_img[rois_pos[i][0]:rois_pos[i][1], rois_pos[i][2]:rois_pos[i][3]] = contours_img_canny[rois_pos[i][0]:rois_pos[i][1], rois_pos[i][2]:rois_pos[i][3]]
 
                     # find contours
-                    contours, hierarchy = cv2.findContours(contours_img_gry, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+                    #contours, hierarchy = cv2.findContours(contours_img_gry, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                    contours, hierarchy = cv2.findContours(contours_img, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE)
 
-                    # get convex hulls of contours
-                    hull = []
-
+                    # select smallest contour
+                    
+                    perims = []
                     for i in range(len(contours)):
-                        hull.append(cv2.convexHull(contours[i], False))
+                        perims.append([cv2.arcLength(contours[i], True), contours[i]])
 
+                    sortedcontours = sorted(perims, key=lambda x: x[0])
+
+                    AREAFILTER = 0.4 # search for smallest contour which is larger than AREAFILTER * next smallest contour
+                    i = 0
+                    smallestcross = None
+                    while True:
+                        if sortedcontours[i][0] > sortedcontours[i+1][0] * AREAFILTER:
+                            smallestcross = sortedcontours[i][1]
+                            break
+                        else:
+                            i += 1
+                    
                     print('Found', len(contours), 'contours in circle')
 
+                    # get convexity defects of contour
+                    hull = cv2.convexHull(smallestcross, returnPoints=False)
+                    hullfordraw = cv2.convexHull(smallestcross, returnPoints=True)
+                    defects = cv2.convexityDefects(smallestcross, hull)
+
+
                     # draw contours and hull points
-                    cv2.drawContours(tmp_img, contours, -1, (0, 255, 0), 3, 8)
-                    cv2.drawContours(tmp_img, hull, -1, (255, 0, 0), 3, 8)
+                    cv2.drawContours(tmp_img, contours, -1, (0, 255, 0), 2)
+                    cv2.drawContours(tmp_img, [hullfordraw], -1, (255, 0, 0), 2)
+
+                    if defects is not None and len(defects) > 4:
+                        print('Found', len(defects), 'convexity defects in cross')
+                        pnts = []
+                        for i in range(defects.shape[0]):
+                            s,e,f,d = defects[i,0]
+                            pnt = tuple(smallestcross[f][0])
+
+                            pnts.append([d, pnt])
+
+                        sortedpnts = sorted(pnts, key=lambda x: x[0], reverse=True)
+
+                        # select 4 pnts furthest from hull, ie inner corners
+                        innerpnts = []
+                        for i in range(4):
+                            innerpnts.append(sortedpnts[i][1])
+
+                            cv2.circle(tmp_img, sortedpnts[i][1], 3, [0,0,255], -1)
+                        
+                        # find centre of 4 points
+                        x = int(sum([p[0] for p in innerpnts]) / 4)
+                        y = int(sum([p[1] for p in innerpnts]) / 4)
+                        centre = Point(x, y)
+                        cv2.circle(tmp_img, (centre.x, centre.y), 4, [255,0,0], 2)
+                        self.data.append((framenum, centre))
+                        
 
                 ims_out.append(tmp_img.copy())
+                cv2.imshow("Frame", tmp_img)
                 
             else:
                 print("Minimum makers not detected, trying next frame")
@@ -225,8 +259,8 @@ class Tracker():
                     pass
 
             # show result
-            out_im = ImageHelpers.imageGrid(ims_out, len(ims_out), 1, 1400)
-            cv2.imshow("Frame", out_im)
+            # out_im = ImageHelpers.imageGrid(ims_out, len(ims_out), 1, 1400)
+            # cv2.imshow("Frame", out_im)
 
 
     def undistort(self, img):
@@ -241,3 +275,11 @@ class Tracker():
         
         undistorted = cv2.undistort(img, self.calib.mtx, self.calib.dst, None, self.calib.refmtx)
         return undistorted
+
+    def save_centres_csv(self, filename='data.csv'):
+
+        with open(filename, 'w') as f:
+            writer = csv.writer(f, dialect='excel')
+            writer.writerows([[r[0], r[1].x, r[1].y] for r in self.data])
+
+        print('Saved tracking data as csv')

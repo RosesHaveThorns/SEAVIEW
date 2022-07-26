@@ -35,6 +35,7 @@ class SeaView():
 
         tracker = Tracker(self.vid_name, self.n_markers, self.calibration)
         tracker.anaylse()
+        tracker.save_centres_csv()
         
 
     def calibrate(self, subpxl_refinement):
